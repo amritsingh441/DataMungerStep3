@@ -1,16 +1,22 @@
 package com.stackroute.datamunger.reader;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 
 import com.stackroute.datamunger.query.DataTypeDefinitions;
 import com.stackroute.datamunger.query.Header;
 
 public class CsvQueryProcessor extends QueryProcessingEngine {
-
+	
+	private String fileName;
+	BufferedReader br = null;
+	
 	// Parameterized constructor to initialize filename
 	public CsvQueryProcessor(String fileName) throws FileNotFoundException {
-
+		this.fileName = fileName;
+		br = new BufferedReader(new FileReader(fileName));
 	}
 
 	/*
@@ -21,11 +27,12 @@ public class CsvQueryProcessor extends QueryProcessingEngine {
 	
 	@Override
 	public Header getHeader() throws IOException {
-
-		// read the first line
-
-		// populate the header object with the String array containing the header names
-		return null;
+		br.mark(1);
+		String header = br.readLine();
+		String [] headerArr = header.split(",");
+		br.reset();
+		Header headerObj = new Header(headerArr);
+		return headerObj;
 	}
 
 	/**
@@ -49,7 +56,41 @@ public class CsvQueryProcessor extends QueryProcessingEngine {
 	
 	@Override
 	public DataTypeDefinitions getColumnType() throws IOException {
-
-		return null;
+		BufferedReader br = new BufferedReader(new FileReader(fileName));
+		String headerStr = br.readLine();
+		String rowDataStr = br.readLine();
+		rowDataStr += " ,";
+		br.close();
+		Object obj;
+		String [] headerDataArr = headerStr.split(",");
+		String [] rowDataElements = rowDataStr.split(",");
+		String [] rowDataTypes = new String [headerDataArr.length];
+		if(rowDataElements!= null) {
+			for (int i = 0; i < rowDataElements.length; i++) {
+				try {
+					obj = Integer.parseInt(rowDataElements[i]);
+					if(obj instanceof Integer) {
+						rowDataTypes[i] = obj.getClass().getName();
+					}
+					
+				} catch (NumberFormatException nfe) {
+					try {
+						obj = Double.parseDouble(rowDataElements[i]);
+						if(obj instanceof Double) {
+							rowDataTypes[i] = obj.getClass().getName();
+						}
+						
+					} catch (Exception e) {
+						obj = rowDataElements[i];
+						if(obj instanceof String) {
+							rowDataTypes[i] = obj.getClass().getName();
+						}
+						
+					}
+				}
+			}
+		}
+		DataTypeDefinitions dataTypeDefinitions = new DataTypeDefinitions(rowDataTypes);
+		return dataTypeDefinitions;
 	}
 }
